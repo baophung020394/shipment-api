@@ -12,6 +12,7 @@ class Shipment {
           // args: ["--auto-open-devtools-for-tabs"],
           headless: false,
         })
+
         const page = await browser.newPage();
 
         page.on('error', err => {
@@ -19,7 +20,6 @@ class Shipment {
         });
 
         var resp = await page.goto(`https://t.17track.net/en#nums=${nums}`);
-        const contentHTML = await page.content();
 
         await page.setRequestInterception(true);
         page.on('response', async function (response) {
@@ -53,11 +53,11 @@ class Shipment {
         page.on('request', function (request) {
           request.continue();
         })
-
+        // await browser.close();
       } catch (error) {
         // console.log(error);
       }
-      // await browser.close();
+     
     }); // End Promise
   }
 }
