@@ -1,79 +1,25 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
-const cherio = require('cherio');
-var cookieParser = require('cookie-parser');
-let app = express();
-app.use(cookieParser());
 
-// Not use
+let app = express();
+
 const Shipment = require('./components/shipment-api/Shipment')
 const shipment = new Shipment();
 
-app.get('/tracking-number', function(req, res) {
-    (async () => {
-        try {
-            const browser = await puppeteer.launch({
-                args: ["--auto-open-devtools-for-tabs"],
-                headless: false,
+app.get('/tracking-number', async function(req, res) {
+    let data = await shipment.getInfomationTrack('RR480312677VN');
+    for (let i = 0; i < data.length; i++) {
+        if(data[i].mes === 'Success') {
+             return res.json({
+                status: '200',
+                tracks: data
             });
-            var nums = 'RR480312677VN'
-            const page = await browser.newPage();
-
-            page.on('error', err=> {
-                console.log('error happen at the page: ', err);
+        } else {
+            return res.json({
+                status: '400',
+                tracks: data
             });
-            
-            var resp = await page.goto(`https://t.17track.net/en#nums=${nums}`); 
-            // console.log(resp)
-        
-            const contentHTML = await page.content();
-
-            await page.setRequestInterception(true);
-            page.on('response', async function (response) {
-
-                    if(response.url().toString().indexOf('https://t.17track.net/restapi/track') >= 0) 
-                    {
-                        // let cookies = req.cookies['__cfduid'];
-                        // console.log(cookies);
-                        console.log("text")
-                        const text = await response.text();
-                        let datas = JSON.parse(text).dat[0].track;
-                        console.log(typeof datas);
-                        if(datas === null) {
-                            res.json({
-                                errors: [{
-                                    status: 400,
-                                    message: "Data null"
-                                }]
-                            })
-                            
-                        } else {
-                            let trucks = JSON.parse(text).dat[0].track.z1;
-                            for (let i of trucks) {
-                                return res.json ({
-                                    status: 200,
-                                    message: "Success",
-                                    track: [{
-                                        date: i['a'],
-                                        code: i['c'],
-                                        note: i['z']
-                                    }]
-                                });
-                            }
-                        } 
-                    } 
-                })   
-
-                page.on('request', function(request) {
-                    request.continue();
-                })
-                // await browser.close();
-        }  catch (error) {
-            // console.log(error);
         }
-        // await browser.close();
-        
-    })();
+    } 
 })
 
 app.listen("8080", function() {
